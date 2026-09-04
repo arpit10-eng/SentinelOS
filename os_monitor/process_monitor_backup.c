@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdbool.h>
 
 #define MAX_PROCESSES 2048
 
@@ -468,15 +467,8 @@ int collect_processes(
    Main
    ========================================================= */
 
-int main(int argc, char *argv[])
+int main()
 {
-    bool csv_mode = false;
-
-    if (argc > 1 && strcmp(argv[1], "--csv") == 0)
-    {
-        csv_mode = true;
-    }
-
     struct ProcessInfo previous[MAX_PROCESSES];
 
     struct ProcessInfo current[MAX_PROCESSES];
@@ -525,32 +517,18 @@ int main(int argc, char *argv[])
     }
 
 
-    /*
-       Normal mode shows startup information.
-       CSV mode shows only the CSV header.
-    */
+    printf(
+        "SentinelOS monitor starting...\n"
+    );
 
-    if (!csv_mode)
-    {
-        printf(
-            "SentinelOS monitor starting...\n"
-        );
+    printf(
+        "Logical CPUs: %ld\n",
+        cpu_count
+    );
 
-        printf(
-            "Logical CPUs: %ld\n",
-            cpu_count
-        );
-
-        printf(
-            "Calculating CPU and I/O rates...\n"
-        );
-    }
-    else
-    {
-        printf(
-            "pid,ppid,name,state,memory_kb,parent,read_rate,write_rate,cpu_usage\n"
-        );
-    }
+    printf(
+        "Calculating CPU and I/O rates...\n"
+    );
 
 
     /*
@@ -603,60 +581,66 @@ int main(int argc, char *argv[])
 
 
         /*
-           Display information.
-           CSV mode must contain only CSV rows.
+           Clear terminal screen.
         */
 
-        if (!csv_mode)
-        {
-            printf("\033[2J\033[H");
+        printf("\033[2J\033[H");
 
-            printf(
-                "============================================================================================================\n"
-            );
 
-            printf(
-                "                                      SentinelOS Process Monitor\n"
-            );
+        /* -------------------------------------------------
+           Header
+           ------------------------------------------------- */
 
-            printf(
-                "============================================================================================================\n"
-            );
+        printf(
+            "============================================================================================================\n"
+        );
 
-            printf(
-                "Logical CPUs: %ld\n",
-                cpu_count
-            );
+        printf(
+            "                                      SentinelOS Process Monitor\n"
+        );
 
-            printf(
-                "Refreshing every 2 seconds...\n"
-            );
+        printf(
+            "============================================================================================================\n"
+        );
 
-            printf(
-                "Process relationship is based on PID and PPID.\n"
-            );
+        printf(
+            "Logical CPUs: %ld\n",
+            cpu_count
+        );
 
-            printf(
-                "Press Ctrl+C to stop.\n\n"
-            );
+        printf(
+            "Refreshing every 2 seconds...\n"
+        );
 
-            printf(
-                "%-8s %-8s %-18s %-7s %-12s %-12s %-14s %-14s %s\n",
-                "PID",
-                "PPID",
-                "NAME",
-                "STATE",
-                "MEMORY(kB)",
-                "PARENT",
-                "READ/s",
-                "WRITE/s",
-                "CPU"
-            );
+        printf(
+            "Process relationship is based on PID and PPID.\n"
+        );
 
-            printf(
-                "------------------------------------------------------------------------------------------------------------\n"
-            );
-        }
+        printf(
+            "Press Ctrl+C to stop.\n\n"
+        );
+
+
+        /* -------------------------------------------------
+           Table header
+           ------------------------------------------------- */
+
+        printf(
+            "%-8s %-8s %-18s %-7s %-12s %-12s %-14s %-14s %s\n",
+            "PID",
+            "PPID",
+            "NAME",
+            "STATE",
+            "MEMORY(kB)",
+            "PARENT",
+            "READ/s",
+            "WRITE/s",
+            "CPU"
+        );
+
+        printf(
+            "------------------------------------------------------------------------------------------------------------\n"
+        );
 
 
         /* =================================================
@@ -769,36 +753,18 @@ int main(int argc, char *argv[])
                    Print complete process information
                    --------------------------------------------- */
 
-                if (csv_mode)
-                {
-                    printf(
-                        "%d,%d,\"%s\",%c,%ld,%s,%ld,%ld,%.2f\n",
-                        current[i].pid,
-                        current[i].ppid,
-                        current[i].name,
-                        current[i].state,
-                        current[i].memory,
-                        parent_status ? "EXISTS" : "NONE",
-                        current[i].read_rate,
-                        current[i].write_rate,
-                        current[i].cpu_usage
-                    );
-                }
-                else
-                {
-                    printf(
-                        "%-8d %-8d %-18s %-7c %-12ld %-12s %-14ld %-14ld %.2f%%\n",
-                        current[i].pid,
-                        current[i].ppid,
-                        current[i].name,
-                        current[i].state,
-                        current[i].memory,
-                        parent_status ? "EXISTS" : "NONE",
-                        current[i].read_rate,
-                        current[i].write_rate,
-                        current[i].cpu_usage
-                    );
-                }
+                printf(
+                    "%-8d %-8d %-18s %-7c %-12ld %-12s %-14ld %-14ld %.2f%%\n",
+                    current[i].pid,
+                    current[i].ppid,
+                    current[i].name,
+                    current[i].state,
+                    current[i].memory,
+                    parent_status ? "EXISTS" : "NONE",
+                    current[i].read_rate,
+                    current[i].write_rate,
+                    current[i].cpu_usage
+                );
             }
 
 
@@ -808,32 +774,17 @@ int main(int argc, char *argv[])
 
             else
             {
-                if (csv_mode)
-                {
-                    printf(
-                        "%d,%d,\"%s\",%c,%ld,%s,0,0,0.00\n",
-                        current[i].pid,
-                        current[i].ppid,
-                        current[i].name,
-                        current[i].state,
-                        current[i].memory,
-                        parent_status ? "EXISTS" : "NONE"
-                    );
-                }
-                else
-                {
-                    printf(
-                        "%-8d %-8d %-18s %-7c %-12ld %-12s %-14s %-14s ---\n",
-                        current[i].pid,
-                        current[i].ppid,
-                        current[i].name,
-                        current[i].state,
-                        current[i].memory,
-                        parent_status ? "EXISTS" : "NONE",
-                        "---",
-                        "---"
-                    );
-                }
+                printf(
+                    "%-8d %-8d %-18s %-7c %-12ld %-12s %-14s %-14s ---\n",
+                    current[i].pid,
+                    current[i].ppid,
+                    current[i].name,
+                    current[i].state,
+                    current[i].memory,
+                    parent_status ? "EXISTS" : "NONE",
+                    "---",
+                    "---"
+                );
             }
         }
 
