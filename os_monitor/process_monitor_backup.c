@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-
 #define MAX_PROCESSES 2048
 
 struct ProcessInfo
@@ -269,9 +268,9 @@ int parent_exists(
 }
 
 
-/* =========================================================
+// =========================================================
    Collect process information
-   ========================================================= */
+   ========================================================= //
 
 int collect_processes(
     struct ProcessInfo processes[],
