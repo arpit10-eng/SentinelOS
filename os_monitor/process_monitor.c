@@ -471,10 +471,18 @@ int collect_processes(
 int main(int argc, char *argv[])
 {
     bool csv_mode = false;
+    bool once_mode = false;
 
-    if (argc > 1 && strcmp(argv[1], "--csv") == 0)
+    for (int i = 1; i < argc; i++)
     {
-        csv_mode = true;
+        if (strcmp(argv[i], "--csv") == 0)
+        {
+            csv_mode = true;
+        }
+        else if (strcmp(argv[i], "--once") == 0)
+        {
+            once_mode = true;
+        }
     }
 
     struct ProcessInfo previous[MAX_PROCESSES];
@@ -853,6 +861,17 @@ int main(int argc, char *argv[])
         previous_count = current_count;
 
         total_previous = total_current;
+
+
+        /*
+           In one-shot mode, stop after the first
+           complete rate-calculated snapshot.
+        */
+
+        if (once_mode)
+        {
+            break;
+        }
 
 
         /*
