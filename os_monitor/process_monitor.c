@@ -17,6 +17,7 @@ struct ProcessInfo
     long memory;
 
     long cpu_ticks;
+    long start_ticks;
 
     long read_bytes;
     long write_bytes;
@@ -92,6 +93,66 @@ long get_process_cpu_ticks(const char *pid)
     }
 
     return utime + stime;
+}
+
+
+/* =========================================================
+   Get process start time from /proc/<PID>/stat
+   ========================================================= */
+
+long get_process_start_ticks(const char *pid)
+{
+    char path[512];
+    char line[2048];
+
+    snprintf(
+        path,
+        sizeof(path),
+        "/proc/%s/stat",
+        pid
+    );
+
+    FILE *file = fopen(path, "r");
+
+    if (file == NULL)
+    {
+        return -1;
+    }
+
+    if (fgets(line, sizeof(line), file) == NULL)
+    {
+        fclose(file);
+        return -1;
+    }
+
+    fclose(file);
+
+    char *closing_bracket = strrchr(line, ')');
+
+    if (closing_bracket == NULL)
+    {
+        return -1;
+    }
+
+    char *data = closing_bracket + 2;
+    char *token = strtok(data, " ");
+
+    long start_ticks = -1;
+    int field = 3;
+
+    while (token != NULL)
+    {
+        if (field == 22)
+        {
+            start_ticks = atol(token);
+            break;
+        }
+
+        token = strtok(NULL, " ");
+        field++;
+    }
+
+    return start_ticks;
 }
 
 
@@ -329,6 +390,7 @@ int collect_processes(
         process->memory = 0;
 
         process->cpu_ticks = -1;
+        process->start_ticks = -1;
 
         process->read_bytes = 0;
         process->write_bytes = 0;
@@ -435,6 +497,11 @@ int collect_processes(
 
         process->cpu_ticks =
             get_process_cpu_ticks(
+                entry->d_name
+            );
+
+        process->start_ticks =
+            get_process_start_ticks(
                 entry->d_name
             );
 
@@ -556,7 +623,7 @@ int main(int argc, char *argv[])
     else
     {
         printf(
-            "pid,ppid,name,state,memory_kb,parent,read_rate,write_rate,cpu_usage\n"
+            "pid,ppid,start_ticks,name,state,memory_kb,parent,read_rate,write_rate,cpu_usage\n"
         );
     }
 
@@ -780,9 +847,10 @@ int main(int argc, char *argv[])
                 if (csv_mode)
                 {
                     printf(
-                        "%d,%d,\"%s\",%c,%ld,%s,%ld,%ld,%.2f\n",
+                        "%d,%d,%ld,\"%s\",%c,%ld,%s,%ld,%ld,%.2f\n",
                         current[i].pid,
                         current[i].ppid,
+                        current[i].start_ticks,
                         current[i].name,
                         current[i].state,
                         current[i].memory,
@@ -819,9 +887,10 @@ int main(int argc, char *argv[])
                 if (csv_mode)
                 {
                     printf(
-                        "%d,%d,\"%s\",%c,%ld,%s,0,0,0.00\n",
+                        "%d,%d,%ld,\"%s\",%c,%ld,%s,0,0,0.00\n",
                         current[i].pid,
                         current[i].ppid,
+                        current[i].start_ticks,
                         current[i].name,
                         current[i].state,
                         current[i].memory,
