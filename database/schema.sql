@@ -1,5 +1,5 @@
 CREATE DATABASE IF NOT EXISTS sentinelos;
-
+/*create database if not exist*/
 USE sentinelos;
 
 CREATE TABLE processes (
