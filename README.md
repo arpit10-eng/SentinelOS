@@ -18,7 +18,7 @@ Monitor → Collect Data → Store in Database → Analyze Behavior → Detect A
 - FastAPI — backend/API layer
 - HTML, CSS, JavaScript — dashboard
 - Ubuntu Linux through WSL2 — development environment
-- Git and GitHub — version control
+- Git and GitHub — version control.
 
 ## Project Structure
 
