@@ -1,3 +1,4 @@
 os_monitor/process_monitor
 __pycache__/
 *.pyc
+database/backups/
