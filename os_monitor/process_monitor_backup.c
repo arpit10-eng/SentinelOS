@@ -16,6 +16,7 @@ struct ProcessInfo
 
     long cpu_ticks;
 
+    
     long read_bytes;
     long write_bytes;
 
