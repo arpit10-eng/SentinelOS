@@ -1,7 +1,6 @@
 CREATE DATABASE IF NOT EXISTS sentinelos;
-/*create database if not exist*/
-USE sentinelos;
 
+USE sentinelos;
 
 CREATE TABLE processes (
     process_id INT AUTO_INCREMENT PRIMARY KEY,
