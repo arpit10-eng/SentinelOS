@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 def get_connection():
     try:
         return mysql.connector.connect(
