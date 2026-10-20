@@ -66,7 +66,6 @@ long get_process_cpu_ticks(const char *pid)
     }
 
     char *data = closing_bracket + 2;
-
     char *token = strtok(data, " ");
 
     long utime = 0;
