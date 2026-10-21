@@ -30,7 +30,6 @@ struct ProcessInfo
 /* =========================================================
    Get CPU ticks used by one process
    ========================================================= */
-
 long get_process_cpu_ticks(const char *pid)
 {
     char path[512];
