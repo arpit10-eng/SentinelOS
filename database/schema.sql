@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS processes (
     state CHAR(1),
     first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     start_ticks BIGINT NULL,
+    os_type VARCHAR(20) NOT NULL DEFAULT 'Linux',
     UNIQUE KEY unique_pid_start_ticks (pid, start_ticks)
 );
 

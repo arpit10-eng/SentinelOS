@@ -105,8 +105,8 @@ def collect_processes():
             cursor.execute(
                 """
                 INSERT INTO processes
-                    (pid, ppid, name, state, start_ticks)
-                VALUES (%s, %s, %s, %s, %s)
+                    (pid, ppid, name, state, start_ticks, os_type)
+                VALUES (%s, %s, %s, %s, %s, 'Linux')
                 ON DUPLICATE KEY UPDATE
                     ppid = VALUES(ppid),
                     name = VALUES(name),
