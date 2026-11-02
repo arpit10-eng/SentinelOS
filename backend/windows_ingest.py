@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime, timezone
 from pathlib import Path
 
 from backend.db import get_connection
@@ -12,9 +13,7 @@ def map_state(status):
 
     if status == "running":
         return "R"
-    if status == "stopped":
-        return "S"
-    if status == "sleeping":
+    if status in ("stopped", "sleeping"):
         return "S"
     if status == "disk-sleep":
         return "D"
@@ -24,26 +23,31 @@ def map_state(status):
     return "U"
 
 
+def get_start_ticks(pid, create_time):
+    # Special Windows system processes may report zero creation time.
+    if create_time <= 0:
+        return -pid - 1
+
+    # Convert Windows creation time into a microsecond timestamp.
+    return int(datetime.fromtimestamp(
+        create_time, tz=timezone.utc
+    ).timestamp() * 1_000_000)
+
+
 def ingest_windows_processes():
     if not CSV_FILE.exists():
-        raise FileNotFoundError(
-            f"Windows process CSV not found: {CSV_FILE}"
-        )
+        raise FileNotFoundError(f"Windows process CSV not found: {CSV_FILE}")
 
     connection = get_connection()
     cursor = connection.cursor()
-    inserted = 0
+    processed = 0
 
     try:
         with CSV_FILE.open("r", newline="", encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
 
             required_columns = {
-                "pid",
-                "ppid",
-                "name",
-                "status",
-                "memory_mb",
+                "pid", "ppid", "name", "status", "memory_mb", "create_time"
             }
 
             if not reader.fieldnames or not required_columns.issubset(reader.fieldnames):
@@ -55,25 +59,23 @@ def ingest_windows_processes():
                     ppid = int(row["ppid"])
                     name = row["name"].strip()
                     memory_mb = float(row["memory_mb"])
+                    create_time = float(row["create_time"])
 
                     if pid < 0 or ppid < 0:
                         raise ValueError("PID and PPID cannot be negative.")
                     if not name:
                         raise ValueError("Process name cannot be empty.")
-                    if memory_mb < 0:
-                        raise ValueError("Memory usage cannot be negative.")
+                    if memory_mb < 0 or create_time < 0:
+                        raise ValueError("Memory and creation time cannot be negative.")
 
                 except (TypeError, ValueError, KeyError) as error:
                     raise ValueError(
-                        f"Invalid Windows process CSV record on line {line_number}: {error}"
+                        f"Invalid CSV record on line {line_number}: {error}"
                     ) from error
 
+                start_ticks = get_start_ticks(pid, create_time)
                 state = map_state(row["status"])
-
-                # Windows PIDs can overlap with Linux PIDs.
-                # Use a negative start_ticks value to keep Windows
-                # records separate under the existing unique key.
-                windows_start_ticks = -pid - 1
+                memory_kb = round(memory_mb * 1024)
 
                 cursor.execute(
                     """
@@ -83,31 +85,26 @@ def ingest_windows_processes():
                     ON DUPLICATE KEY UPDATE
                         ppid = VALUES(ppid),
                         name = VALUES(name),
-                        state = VALUES(state),
-                        os_type = 'Windows'
+                        state = VALUES(state)
                     """,
-                    (pid, ppid, name, state, windows_start_ticks),
+                    (pid, ppid, name, state, start_ticks),
                 )
 
                 cursor.execute(
                     """
                     SELECT process_id
                     FROM processes
-                    WHERE pid = %s
+                    WHERE os_type = 'Windows'
+                      AND pid = %s
                       AND start_ticks = %s
-                      AND os_type = 'Windows'
                     """,
-                    (pid, windows_start_ticks),
+                    (pid, start_ticks),
                 )
 
                 process_row = cursor.fetchone()
-                if process_row is None:
-                    raise RuntimeError(
-                        f"Could not find Windows database record for PID {pid}"
-                    )
 
-                process_id = process_row[0]
-                memory_kb = round(memory_mb * 1024)
+                if process_row is None:
+                    raise RuntimeError(f"Could not find Windows process PID {pid}")
 
                 cursor.execute(
                     """
@@ -115,14 +112,14 @@ def ingest_windows_processes():
                         (process_id, cpu_usage, memory_usage, read_rate, write_rate)
                     VALUES (%s, %s, %s, %s, %s)
                     """,
-                    (process_id, None, memory_kb, 0, 0),
+                    (process_row[0], None, memory_kb, 0, 0),
                 )
 
-                inserted += 1
+                processed += 1
 
         connection.commit()
         print("Windows process data successfully stored in MySQL.")
-        print(f"Windows processes processed: {inserted}")
+        print(f"Windows processes processed: {processed}")
 
     except Exception:
         connection.rollback()

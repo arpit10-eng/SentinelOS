@@ -4,7 +4,6 @@ from datetime import datetime
 
 import psutil
 
-
 OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "windows_processes.csv")
 
 
@@ -13,7 +12,7 @@ def collect_processes():
     processes = []
 
     for process in psutil.process_iter(
-        ["pid", "ppid", "name", "status", "memory_info"]
+        ["pid", "ppid", "name", "status", "memory_info", "create_time"]
     ):
         try:
             info = process.info
@@ -27,6 +26,7 @@ def collect_processes():
                 "status": info["status"] or "Unknown",
                 "memory_mb": round(memory_info.rss / (1024 * 1024), 2)
                 if memory_info else 0,
+                "create_time": info["create_time"],
             })
 
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
@@ -43,6 +43,7 @@ def save_to_csv(processes):
         "name",
         "status",
         "memory_mb",
+        "create_time",
     ]
 
     with open(OUTPUT_FILE, "w", newline="", encoding="utf-8") as csvfile:
@@ -58,6 +59,7 @@ def main():
     print("SentinelOS Windows Process Collector")
     print(f"Processes collected: {len(processes)}")
     print(f"CSV saved to: {OUTPUT_FILE}")
+
     print("\nSample processes:")
 
     for process in processes[:10]:

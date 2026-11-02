@@ -5,3 +5,6 @@ database/backups/
 
 # Environment variables and secrets
 .env
+
+# Generated Windows process data
+os_monitor/windows_processes.csv
