@@ -24,11 +24,9 @@ def map_state(status):
 
 
 def get_start_ticks(pid, create_time):
-    # Special Windows system processes may report zero creation time.
     if create_time <= 0:
         return -pid - 1
 
-    # Convert Windows creation time into a microsecond timestamp.
     return int(datetime.fromtimestamp(
         create_time, tz=timezone.utc
     ).timestamp() * 1_000_000)
@@ -47,7 +45,15 @@ def ingest_windows_processes():
             reader = csv.DictReader(csvfile)
 
             required_columns = {
-                "pid", "ppid", "name", "status", "memory_mb", "create_time"
+                "pid",
+                "ppid",
+                "name",
+                "status",
+                "memory_mb",
+                "create_time",
+                "cpu_usage",
+                "read_rate",
+                "write_rate",
             }
 
             if not reader.fieldnames or not required_columns.issubset(reader.fieldnames):
@@ -60,13 +66,18 @@ def ingest_windows_processes():
                     name = row["name"].strip()
                     memory_mb = float(row["memory_mb"])
                     create_time = float(row["create_time"])
+                    cpu_usage = float(row["cpu_usage"])
+                    read_rate = int(row["read_rate"])
+                    write_rate = int(row["write_rate"])
 
                     if pid < 0 or ppid < 0:
                         raise ValueError("PID and PPID cannot be negative.")
+
                     if not name:
                         raise ValueError("Process name cannot be empty.")
-                    if memory_mb < 0 or create_time < 0:
-                        raise ValueError("Memory and creation time cannot be negative.")
+
+                    if min(memory_mb, create_time, cpu_usage, read_rate, write_rate) < 0:
+                        raise ValueError("Resource measurements cannot be negative.")
 
                 except (TypeError, ValueError, KeyError) as error:
                     raise ValueError(
@@ -112,12 +123,19 @@ def ingest_windows_processes():
                         (process_id, cpu_usage, memory_usage, read_rate, write_rate)
                     VALUES (%s, %s, %s, %s, %s)
                     """,
-                    (process_row[0], None, memory_kb, 0, 0),
+                    (
+                        process_row[0],
+                        cpu_usage,
+                        memory_kb,
+                        read_rate,
+                        write_rate,
+                    ),
                 )
 
                 processed += 1
 
         connection.commit()
+
         print("Windows process data successfully stored in MySQL.")
         print(f"Windows processes processed: {processed}")
 
