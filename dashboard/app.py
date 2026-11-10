@@ -3,6 +3,7 @@ import plotly.express as px
 import streamlit as st
 
 from backend.db import get_connection
+from dashboard.security_panels import show_security_panels
 
 
 st.set_page_config(
@@ -275,6 +276,8 @@ def show_dashboard():
         use_container_width=True,
         hide_index=True,
     )
+
+    show_security_panels()
 
     st.caption("Dashboard refresh interval: 10 seconds.")
     st.caption("Data source: SentinelOS MySQL database.")

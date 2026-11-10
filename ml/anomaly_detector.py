@@ -4,6 +4,7 @@ import pandas as pd
 
 from sklearn.ensemble import IsolationForest
 
+
 from backend.db import get_connection
 from datetime import datetime
 
