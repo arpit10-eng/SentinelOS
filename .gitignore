@@ -8,3 +8,20 @@ database/backups/
 
 # Generated Windows process data
 os_monitor/windows_processes.csv
+
+# Python virtual environments
+.venv/
+venv/
+
+# Testing and coverage
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
