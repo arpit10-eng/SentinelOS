@@ -5,7 +5,6 @@ from backend.db import get_connection
 
 def validate_process_row(row, line_number):
     """Validate and convert one process CSV record."""
-    
     try:
         pid = int(row["pid"])
         ppid = int(row["ppid"])
