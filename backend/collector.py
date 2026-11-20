@@ -4,7 +4,7 @@ import subprocess
 from backend.db import get_connection
 
 def validate_process_row(row, line_number):
-    """Validate and convert one process CSV record."""
+    """Validate and convert one processs CSV record."""
     try:
         pid = int(row["pid"])
         ppid = int(row["ppid"])
