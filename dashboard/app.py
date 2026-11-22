@@ -93,7 +93,7 @@ def show_dashboard():
         st.warning("No monitoring data found. Run the process collectors first.")
         return
 
-    # Sidebar filters
+    # Sidebar  filters
     st.sidebar.header("Dashboard Filters")
 
     available_os = ["All"] + sorted(
